@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace SocketIO\Engine\WebSocket;
 
 use SocketIO\Engine\Server\ConfigPayload;
+use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event;
+use SocketIO\Parser\Packet;
+use SocketIO\Parser\PacketPayload;
 use SocketIO\SocketIO;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
@@ -72,34 +75,18 @@ class Server
      */
     public function onMessage(WebSocketServer $server, WebSocketFrame $frame)
     {
-        // todo json 错误捕获
-        $data = json_decode($frame->data, true);
+        $packetPayload = Packet::decode($frame->data);
 
-        $eventName = current(array_keys($data));
-
-        $isExistEvent = false;
-
-        /** @var Event $event */
-        foreach ($this->eventPool as $event) {
-            if ($event->getName() == $eventName) {
-                $isExistEvent = true;
-
-                $event->pushListener($frame->fd);
-
-                /** @var SocketIO $socket */
-                $socket = $event->getSocket();
-                $socket->setMessage('test');
-                $socket->setWebSocketServer($server);
-                $socket->setWebSocketFrame($frame);
-
-                $callback = $event->getCallback();
-
-                $callback($socket);
-            }
-        }
-
-        if (!$isExistEvent) {
-            $server->push($frame->fd, 'Bad Event');
+        switch ($packetPayload->getType()) {
+            case TypeEnum::PING:
+                $server->push($frame->fd, TypeEnum::PONG);
+                break;
+            case TypeEnum::MESSAGE:
+                $this->handleEvent($server, $frame, $packetPayload);
+                break;
+            default:
+                $server->push($frame->fd, 'unknown message');
+                break;
         }
     }
 
@@ -114,6 +101,41 @@ class Server
         /** @var Event $event */
         foreach ($this->eventPool as $event) {
             $event->popListener($fd);
+        }
+    }
+
+    /**
+     * @param WebSocketServer $server
+     * @param WebSocketFrame $frame
+     * @param PacketPayload $packetPayload
+     */
+    private function handleEvent(WebSocketServer $server, WebSocketFrame $frame, PacketPayload $packetPayload)
+    {
+        $eventName = $packetPayload->getEvent();
+
+        $isExistEvent = false;
+
+        /** @var Event $event */
+        foreach ($this->eventPool as $event) {
+            if ($event->getName() == $eventName) {
+                $isExistEvent = true;
+
+                $event->pushListener($frame->fd);
+
+                /** @var SocketIO $socket */
+                $socket = $event->getSocket();
+                $socket->setMessage($packetPayload->getMessage());
+                $socket->setWebSocketServer($server);
+                $socket->setWebSocketFrame($frame);
+
+                $callback = $event->getCallback();
+
+                $callback($socket);
+            }
+        }
+
+        if (!$isExistEvent) {
+            $server->push($frame->fd, 'Bad Event');
         }
     }
 }

@@ -12,7 +12,18 @@ if (!$client->connect())
     return false;
 }
 
-$send_data = '{"new message": 111}';
+$send_data = '2';
+if (!$client->send($send_data))
+{
+    echo $send_data. " send failed \n";
+    return false;
+}
+
+echo "send success \n";
+
+echo $client->recv();
+
+$send_data = '42["new message", 111]';
 if (!$client->send($send_data))
 {
     echo $send_data. " send failed \n";
