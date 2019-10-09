@@ -1,0 +1,24 @@
+{
+  "name": "funsoul/socket.io-swoole-server",
+  "description": ":rainbow: Socket.io Server implementation for Swoole",
+  "keywords": ["socket.io", "swoole", "websocket"],
+  "require": {
+    "php": ">=7.1",
+    "ext-swoole": ">=4.0.3",
+    "ext-json": "*"
+  },
+  "authors": [
+    {
+      "name": "funsoul",
+      "email": "cyanming2016@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "SocketIO\\": "src"
+    }
+  },
+  "require-dev": {
+    "swoole/ide-helper": "@dev"
+  }
+}
