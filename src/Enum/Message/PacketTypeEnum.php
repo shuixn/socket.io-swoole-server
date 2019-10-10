@@ -7,11 +7,11 @@ namespace SocketIO\Enum\Message;
 use SocketIO\Enum\BaseEnum;
 
 /**
- * Class PacketType
+ * Class PacketTypeEnum
  *
  * @package SocketIO\Enum\Message
  */
-class PacketType extends BaseEnum
+class PacketTypeEnum extends BaseEnum
 {
     /**
      * @message("connect")

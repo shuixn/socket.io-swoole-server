@@ -6,6 +6,10 @@ namespace SocketIO;
 
 use SocketIO\Engine\Server\ConfigPayload;
 use SocketIO\Engine\WebSocket\Server as EngineWebSocketServer;
+use SocketIO\Enum\Message\PacketTypeEnum;
+use SocketIO\Enum\Message\TypeEnum;
+use SocketIO\Parser\Packet;
+use SocketIO\Parser\PacketPayload;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use SocketIO\ExceptionHandler\InvalidEventException;
@@ -145,11 +149,15 @@ class Server
      */
     public function emit(string $eventName, array $data)
     {
-        $response = [
-            $eventName => $data
-        ];
+        $packetPayload = new PacketPayload();
+        $packetPayload
+            ->setNamespace($this->namespace)
+            ->setEvent($eventName)
+            ->setType(TypeEnum::MESSAGE)
+            ->setPacketType(PacketTypeEnum::EVENT)
+            ->setMessage(json_encode($data));
 
-        $this->webSocketServer->push($this->webSocketFrame->fd, json_encode($response));
+        $this->webSocketServer->push($this->webSocketFrame->fd, Packet::encode($packetPayload));
     }
 
     public function start()
