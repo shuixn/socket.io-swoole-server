@@ -12,6 +12,9 @@ namespace SocketIO;
 class Event
 {
     /** @var string */
+    private $namespace;
+
+    /** @var string */
     private $name;
 
     /** @var array */
@@ -22,6 +25,24 @@ class Event
 
     /** @var Server */
     private $socket;
+
+    /**
+     * @return string
+     */
+    public function getNamespace(): string
+    {
+        return $this->namespace;
+    }
+
+    /**
+     * @param string $namespace
+     * @return Event
+     */
+    public function setNamespace(string $namespace): Event
+    {
+        $this->namespace = $namespace;
+        return $this;
+    }
 
     /**
      * @return string

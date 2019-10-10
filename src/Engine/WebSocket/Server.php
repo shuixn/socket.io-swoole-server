@@ -87,7 +87,7 @@ class Server
             case TypeEnum::UPGRADE:
                 break;
             default:
-                $server->push($frame->fd, 'unknown message');
+                $server->push($frame->fd, 'unknown message or wrong packet');
                 break;
         }
     }
@@ -113,13 +113,14 @@ class Server
      */
     private function handleEvent(WebSocketServer $server, WebSocketFrame $frame, PacketPayload $packetPayload)
     {
+        $namespace = $packetPayload->getNamespace();
         $eventName = $packetPayload->getEvent();
 
         $isExistEvent = false;
 
         /** @var Event $event */
         foreach ($this->eventPool as $event) {
-            if ($event->getName() == $eventName) {
+            if ($event->getNamespace() == $namespace && $event->getName() == $eventName) {
                 $isExistEvent = true;
 
                 $event->pushListener($frame->fd);

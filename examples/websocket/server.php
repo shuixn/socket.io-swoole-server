@@ -14,7 +14,7 @@ try {
         ->setDaemonize(0);
 
     $io = new SocketIO\Server(9991, $config);
-    $io->on('new message', function (SocketIO\Server $socket) {
+    $io->of('/test')->on('new message', function (SocketIO\Server $socket) {
         $socket->emit('new message', [
             'data' => $socket->getMessage()
         ]);

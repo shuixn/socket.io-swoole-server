@@ -17,6 +17,9 @@ use SocketIO\ExceptionHandler\InvalidEventException;
  */
 class Server
 {
+    /** @var string */
+    private $namespace = '/';
+
     /** @var WebSocketServer */
     private $webSocketServer;
 
@@ -102,6 +105,13 @@ class Server
         return $this;
     }
 
+    public function of(string $namespace): self
+    {
+        $this->namespace = !empty($namespace) ? $namespace : $this->namespace;
+
+        return $this;
+    }
+
     /**
      * @param string $eventName
      * @param callable $callback
@@ -118,6 +128,7 @@ class Server
 
         $event = new Event();
         $event
+            ->setNamespace($this->namespace)
             ->setName($eventName)
             ->setCallback($callback)
             ->setListeners([])

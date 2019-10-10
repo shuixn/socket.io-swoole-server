@@ -14,40 +14,42 @@ use SocketIO\Enum\Message\TypeEnum;
  */
 class Packet
 {
+    /** @var string */
+    const PATTERN = '/([0-9]+)[\/]*([a-zA-Z0-9]*)[,]*([\s\S]*)/';
+
     /**
-     * @param string $data
+     * @param string $rawData
      *
      * @return PacketPayload
      */
-    public static function decode(string $data) : PacketPayload
+    public static function decode(string $rawData) : PacketPayload
     {
         $packetPayload = new PacketPayload();
+        $packetPayload->setRawData($rawData);
 
-        if ($index = strpos($data, '[')) {
-            $code = substr($data, 0, $index);
+        if (preg_match_all(self::PATTERN, $rawData, $matches)) {
+            list(, $code, $namespace, $packet) = $matches;
+            $code = current($code);
+            $namespace = current($namespace);
+            $packet = current($packet);
 
-            // todo json error catch
-            $packet = substr($data, $index);
-            if (!empty($packet)) {
-                $data = json_decode($packet, true);
-                if (!empty($data)) {
-                    $event = $data[0];
-                    $message = strval($data[1]);
-                } else {
-                    $event = '';
-                    $message = '';
-                }
+            $packetData = json_decode($packet, true);
+            if (!empty($packetData)) {
+                $event = $packetData[0];
+                $message = json_encode($packetData[1]);
             } else {
                 $event = '';
                 $message = '';
             }
-        } else {
-            $code = $data;
-            $event = '';
-            $message = '';
-        }
 
-        $packetPayload->setEvent($event)->setMessage($message);
+            $packetPayload
+                ->setNamespace($namespace)
+                ->setEvent($event)
+                ->setMessage($message);
+        } else {
+            // wrong packet
+            return $packetPayload;
+        }
 
         switch (strlen($code)) {
             case 0:
@@ -61,13 +63,13 @@ class Packet
                 break;
             case 2:
                 switch ($code) {
-                    case TypeEnum::MESSAGE . PacketType::DISCONNECT:   //client disconnect
+                    case TypeEnum::MESSAGE . PacketType::DISCONNECT:
                         $packetPayload
                             ->setType(TypeEnum::MESSAGE)
                             ->setPacketType(PacketType::DISCONNECT);
 
                         break;
-                    case TypeEnum::MESSAGE . PacketType::EVENT:   //client message
+                    case TypeEnum::MESSAGE . PacketType::EVENT:
                         $packetPayload
                             ->setType(TypeEnum::MESSAGE)
                             ->setPacketType(PacketType::EVENT);
@@ -76,15 +78,15 @@ class Packet
                 break;
             default:
                 switch ($code[0]) {
-                    case TypeEnum::MESSAGE:   //client message
+                    case TypeEnum::MESSAGE:
                         switch ($code[1]) {
-                            case PacketType::EVENT:   //client message with ack
+                            case PacketType::EVENT:
                                 $packetPayload
                                     ->setType(TypeEnum::MESSAGE)
                                     ->setPacketType(PacketType::EVENT);
                                 break;
 
-                            case PacketType::ACK:   //client reply to message with ack
+                            case PacketType::ACK:
                                 $packetPayload
                                     ->setType(TypeEnum::MESSAGE)
                                     ->setPacketType(PacketType::ACK);
