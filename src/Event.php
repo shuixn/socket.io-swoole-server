@@ -20,7 +20,7 @@ class Event
     /** @var callable */
     private $callback;
 
-    /** @var SocketIO */
+    /** @var Server */
     private $socket;
 
     /**
@@ -112,18 +112,18 @@ class Event
     }
 
     /**
-     * @return SocketIO
+     * @return Server
      */
-    public function getSocket(): SocketIO
+    public function getSocket(): Server
     {
         return $this->socket;
     }
 
     /**
-     * @param SocketIO $socket
+     * @param Server $socket
      * @return Event
      */
-    public function setSocket(SocketIO $socket): Event
+    public function setSocket(Server $socket): Event
     {
         $this->socket = $socket;
         return $this;

@@ -11,11 +11,11 @@ use Swoole\WebSocket\Frame as WebSocketFrame;
 use SocketIO\ExceptionHandler\InvalidEventException;
 
 /**
- * Class SocketIO
+ * Class Server
  *
  * @package SocketIO
  */
-class SocketIO
+class Server
 {
     /** @var WebSocketServer */
     private $webSocketServer;
@@ -53,9 +53,9 @@ class SocketIO
     /**
      * @param WebSocketServer $webSocketServer
      *
-     * @return SocketIO
+     * @return Server
      */
-    public function setWebSocketServer(WebSocketServer $webSocketServer): SocketIO
+    public function setWebSocketServer(WebSocketServer $webSocketServer): self
     {
         $this->webSocketServer = $webSocketServer;
 
@@ -73,9 +73,9 @@ class SocketIO
     /**
      * @param WebSocketFrame $webSocketFrame
      *
-     * @return SocketIO
+     * @return Server
      */
-    public function setWebSocketFrame(WebSocketFrame $webSocketFrame): SocketIO
+    public function setWebSocketFrame(WebSocketFrame $webSocketFrame): self
     {
         $this->webSocketFrame = $webSocketFrame;
 
@@ -93,9 +93,9 @@ class SocketIO
     /**
      * @param string $message
      *
-     * @return SocketIO
+     * @return Server
      */
-    public function setMessage(string $message): SocketIO
+    public function setMessage(string $message): self
     {
         $this->message = $message;
 
@@ -106,7 +106,7 @@ class SocketIO
      * @param string $eventName
      * @param callable $callback
      *
-     * @return $this
+     * @return Server
      *
      * @throws InvalidEventException
      */

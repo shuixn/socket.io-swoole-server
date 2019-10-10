@@ -9,7 +9,7 @@ use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event;
 use SocketIO\Parser\Packet;
 use SocketIO\Parser\PacketPayload;
-use SocketIO\SocketIO;
+use SocketIO\Server as SocketIOServer;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use Swoole\Http\Request as HttpRequest;
@@ -84,6 +84,8 @@ class Server
             case TypeEnum::MESSAGE:
                 $this->handleEvent($server, $frame, $packetPayload);
                 break;
+            case TypeEnum::UPGRADE:
+                break;
             default:
                 $server->push($frame->fd, 'unknown message');
                 break;
@@ -122,7 +124,7 @@ class Server
 
                 $event->pushListener($frame->fd);
 
-                /** @var SocketIO $socket */
+                /** @var SocketIOServer $socket */
                 $socket = $event->getSocket();
                 $socket->setMessage($packetPayload->getMessage());
                 $socket->setWebSocketServer($server);
