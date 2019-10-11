@@ -39,3 +39,11 @@ $io->of('/test')->on('new message', function (SocketIO\Server $socket) {
 
 $io->start();
 ```
+
+### Broadcast
+
+```php
+$io->on('new user', function (SocketIO\Server $socket) {
+    $socket->broadcast('hello');
+});
+```

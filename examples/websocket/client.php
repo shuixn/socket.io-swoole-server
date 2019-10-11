@@ -21,4 +21,16 @@ if (!$client->send($send_data))
 
 echo "send success \n";
 
-echo $client->recv();
+echo $client->recv() . PHP_EOL;
+
+
+$send_data = '42/test,["new user", "john"]';
+if (!$client->send($send_data))
+{
+    echo $send_data. " send failed \n";
+    return false;
+}
+
+echo "send success \n";
+
+echo $client->recv() . PHP_EOL;

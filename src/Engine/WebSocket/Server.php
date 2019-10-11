@@ -6,13 +6,16 @@ namespace SocketIO\Engine\WebSocket;
 
 use SocketIO\Engine\Server\ConfigPayload;
 use SocketIO\Enum\Message\TypeEnum;
-use SocketIO\Event;
+use SocketIO\Event\EventListenerTable;
+use SocketIO\Event\ListenerEventTable;
+use SocketIO\Event\ListenerTable;
 use SocketIO\Parser\Packet;
 use SocketIO\Parser\PacketPayload;
 use SocketIO\Server as SocketIOServer;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use Swoole\Http\Request as HttpRequest;
+use SocketIO\Event\EventPayload;
 
 /**
  * Class Server
@@ -72,6 +75,8 @@ class Server
     /**
      * @param WebSocketServer $server
      * @param WebSocketFrame $frame
+     *
+     * @throws \Exception
      */
     public function onMessage(WebSocketServer $server, WebSocketFrame $frame)
     {
@@ -100,7 +105,7 @@ class Server
     {
         echo "client {$fd} closed\n";
 
-        /** @var Event $event */
+        /** @var EventPayload $event */
         foreach ($this->eventPool as $event) {
             $event->popListener($fd);
         }
@@ -110,6 +115,8 @@ class Server
      * @param WebSocketServer $server
      * @param WebSocketFrame $frame
      * @param PacketPayload $packetPayload
+     *
+     * @throws \Exception
      */
     private function handleEvent(WebSocketServer $server, WebSocketFrame $frame, PacketPayload $packetPayload)
     {
@@ -118,12 +125,15 @@ class Server
 
         $isExistEvent = false;
 
-        /** @var Event $event */
+        /** @var EventPayload $event */
         foreach ($this->eventPool as $event) {
             if ($event->getNamespace() == $namespace && $event->getName() == $eventName) {
                 $isExistEvent = true;
 
                 $event->pushListener($frame->fd);
+                EventListenerTable::getInstance()->push($namespace, $eventName, $frame->fd);
+                ListenerEventTable::getInstance()->push($namespace, $eventName, strval($frame->fd));
+                ListenerTable::getInstance()->push(strval($frame->fd));
 
                 /** @var SocketIOServer $socket */
                 $socket = $event->getSocket();

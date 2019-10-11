@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace SocketIO;
+namespace SocketIO\Event;
+
+use SocketIO\Server;
 
 /**
- * Class Event
+ * Class EventPayload
  *
- * @package SocketIO
+ * @package SocketIO\Event
  */
-class Event
+class EventPayload
 {
     /** @var string */
     private $namespace;
@@ -36,9 +38,9 @@ class Event
 
     /**
      * @param string $namespace
-     * @return Event
+     * @return EventPayload
      */
-    public function setNamespace(string $namespace): Event
+    public function setNamespace(string $namespace): self
     {
         $this->namespace = $namespace;
         return $this;
@@ -55,9 +57,9 @@ class Event
     /**
      * @param string $name
      *
-     * @return Event
+     * @return EventPayload
      */
-    public function setName(string $name): Event
+    public function setName(string $name): self
     {
         $this->name = $name;
 
@@ -75,9 +77,9 @@ class Event
     /**
      * @param array $listeners
      *
-     * @return Event
+     * @return EventPayload
      */
-    public function setListeners(array $listeners): Event
+    public function setListeners(array $listeners): self
     {
         $this->listeners = $listeners;
 
@@ -123,9 +125,9 @@ class Event
     /**
      * @param callable $callback
      *
-     * @return Event
+     * @return EventPayload
      */
-    public function setCallback(callable $callback): Event
+    public function setCallback(callable $callback): self
     {
         $this->callback = $callback;
 
@@ -142,9 +144,9 @@ class Event
 
     /**
      * @param Server $socket
-     * @return Event
+     * @return EventPayload
      */
-    public function setSocket(Server $socket): Event
+    public function setSocket(Server $socket): self
     {
         $this->socket = $socket;
         return $this;

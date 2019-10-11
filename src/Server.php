@@ -8,6 +8,8 @@ use SocketIO\Engine\Server\ConfigPayload;
 use SocketIO\Engine\WebSocket\Server as EngineWebSocketServer;
 use SocketIO\Enum\Message\PacketTypeEnum;
 use SocketIO\Enum\Message\TypeEnum;
+use SocketIO\Event\EventPayload;
+use SocketIO\Event\ListenerTable;
 use SocketIO\Parser\Packet;
 use SocketIO\Parser\PacketPayload;
 use Swoole\WebSocket\Server as WebSocketServer;
@@ -130,7 +132,7 @@ class Server
             throw new InvalidEventException('invalid Event');
         }
 
-        $event = new Event();
+        $event = new EventPayload();
         $event
             ->setNamespace($this->namespace)
             ->setName($eventName)
@@ -158,6 +160,22 @@ class Server
             ->setMessage(json_encode($data));
 
         $this->webSocketServer->push($this->webSocketFrame->fd, Packet::encode($packetPayload));
+    }
+
+    /**
+     * @param string $data
+     * @throws \Exception
+     */
+    public function broadcast(string $data)
+    {
+        $listeners = ListenerTable::getInstance()->getListener();
+        if (!empty($listeners)) {
+            foreach ($listeners as $listener) {
+                $this->webSocketServer->push(intval($listener), $data);
+            }
+        } else {
+            $this->webSocketServer->push($this->webSocketFrame->fd, $data);
+        }
     }
 
     public function start()

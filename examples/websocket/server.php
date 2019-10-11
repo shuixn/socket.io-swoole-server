@@ -20,6 +20,10 @@ try {
         ]);
     });
 
+    $io->on('new user', function (SocketIO\Server $socket) {
+        $socket->broadcast('hello');
+    });
+
     $io->start();
 
 } catch (Exception $e) {
