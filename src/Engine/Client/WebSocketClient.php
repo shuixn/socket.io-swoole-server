@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace SocketIO\Engine\WebSocket;
+namespace SocketIO\Engine\Client;
 
 use Swoole\Client as SwooleClient;
 use Swoole\WebSocket\Server as WebSocketServer;
 
 /**
- * Class Client
+ * Class WebSocketClient
  *
- * @package SocketIO\Engine\WebSocket
+ * @package SocketIO\Engine\Client
  */
-class Client
+class WebSocketClient
 {
     /** @var string */
     const VERSION = '0.1.4';

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace SocketIO;
 
-use SocketIO\Engine\Server\ConfigPayload;
-use SocketIO\Engine\WebSocket\Server as EngineWebSocketServer;
+use SocketIO\Engine\Payload\ConfigPayload;
+use SocketIO\Engine\Server as EngineServer;
 use SocketIO\Enum\Message\PacketTypeEnum;
 use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event\EventPayload;
@@ -180,6 +180,6 @@ class Server
 
     public function start()
     {
-        new EngineWebSocketServer($this->port, $this->configPayload, $this->eventPool);
+        new EngineServer($this->port, $this->configPayload, $this->eventPool);
     }
 }

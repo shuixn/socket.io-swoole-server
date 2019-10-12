@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Engine\Server;
+namespace SocketIO\Engine\Payload;
 
 /**
  * Class ConfigPayload
  *
- * @package SocketIO\Engine\Server
+ * @package SocketIO\Engine\Payload
  */
 class ConfigPayload
 {

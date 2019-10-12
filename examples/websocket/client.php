@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-$client = new SocketIO\Engine\WebSocket\Client('127.0.0.1', 9991);
+$client = new SocketIO\Engine\Client\WebSocketClient('127.0.0.1', 9991);
 
 if (!$client->connect())
 {

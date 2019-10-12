@@ -6,14 +6,14 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 try {
 
-    $config = new SocketIO\Engine\Server\ConfigPayload();
+    $config = new SocketIO\Engine\Payload\ConfigPayload();
     $config
         // server worker_num
         ->setWorkerNum(1)
         // server daemonize
         ->setDaemonize(0);
 
-    $io = new SocketIO\Server(9991, $config);
+    $io = new SocketIO\Server(9501, $config);
     $io->of('/test')->on('new message', function (SocketIO\Server $socket) {
         $socket->emit('new message', [
             'data' => $socket->getMessage()

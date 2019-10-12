@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Engine\WebSocket;
+namespace SocketIO\Engine;
 
-use SocketIO\Engine\Server\ConfigPayload;
+use SocketIO\Engine\Payload\ConfigPayload;
+use SocketIO\Engine\Payload\HttpResponsePayload;
+use SocketIO\Engine\Payload\PollingPayload;
+use SocketIO\Engine\Transport\Polling;
 use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event\EventListenerTable;
 use SocketIO\Event\ListenerEventTable;
@@ -15,12 +18,13 @@ use SocketIO\Server as SocketIOServer;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use Swoole\Http\Request as HttpRequest;
+use Swoole\Http\Response as HttpResponse;
 use SocketIO\Event\EventPayload;
 
 /**
  * Class Server
  *
- * @package SocketIO\Engine\WebSocket
+ * @package SocketIO\Engine
  */
 class Server
 {
@@ -29,7 +33,7 @@ class Server
 
     /** @var array */
     protected $serverEvents = [
-        'open', 'message', 'close'
+        'request', 'open', 'message', 'close'
     ];
 
     /** @var array */
@@ -49,6 +53,7 @@ class Server
         $this->server = new WebSocketServer("0.0.0.0", $port);
 
         $this->server->set([
+            'open_http_protocol' => true,
             'worker_num' => $configPayload->getWorkerNum() ?? 1,
             'daemonize' => $configPayload->getDaemonize() ?? 0
         ]);
@@ -72,6 +77,52 @@ class Server
         echo "server: handshake success with fd{$request->fd}\n";
     }
 
+    public function onRequest(HttpRequest $request, HttpResponse $response)
+    {
+        if ($request->server['request_uri'] === '/socket.io/') {
+            $eio = $request->get['eio'] ?? 0;
+            $t = $request->get['t'] ?? '';
+            $transport = $request->get['transport'] ?? '';
+            $sid = $request->get['sid'] ?? '';
+
+            switch ($request->server['request_method']) {
+                case 'GET':
+                    $pollingPayload = new PollingPayload();
+                    $pollingPayload
+                        ->setEio($eio)
+                        ->setT($t)
+                        ->setTransport($transport);
+
+                    $polling = new Polling();
+                    $responsePayload = $polling->handleGet($pollingPayload);
+                    break;
+                case 'POST':
+                    $pollingPayload = new PollingPayload();
+                    $pollingPayload
+                        ->setEio($eio)
+                        ->setT($t)
+                        ->setTransport($transport)
+                        ->setSid($sid);
+
+                    $polling = new Polling();
+                    $responsePayload = $polling->handlePost($pollingPayload);
+                    break;
+                default:
+                    $responsePayload = new HttpResponsePayload();
+                    $responsePayload->setStatus(400)->setHtml('method not found');
+                    break;
+            }
+        } else {
+            $responsePayload = new HttpResponsePayload();
+            $responsePayload->setStatus(404)->setHtml('uri not found');
+        }
+
+        $response->status($responsePayload->getStatus());
+        $response->end($responsePayload->getHtml());
+
+        return;
+    }
+
     /**
      * @param WebSocketServer $server
      * @param WebSocketFrame $frame
@@ -90,6 +141,7 @@ class Server
                 $this->handleEvent($server, $frame, $packetPayload);
                 break;
             case TypeEnum::UPGRADE:
+                $server->push($frame->fd, TypeEnum::NOOP);
                 break;
             default:
                 $server->push($frame->fd, 'unknown message or wrong packet');
@@ -109,6 +161,8 @@ class Server
         foreach ($this->eventPool as $event) {
             $event->popListener($fd);
         }
+
+        // todo clear table event and fd
     }
 
     /**
