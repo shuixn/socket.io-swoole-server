@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Parser;
+namespace SocketIO\Parser\WebSocket;
 
 /**
  * Class PacketPayload
  *
- * @package SocketIO\Parser
+ * @package SocketIO\Parser\WebSocket
  */
 class PacketPayload
 {

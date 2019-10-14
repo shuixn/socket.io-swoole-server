@@ -12,19 +12,19 @@ namespace SocketIO\Engine\Payload;
 class HttpResponsePayload
 {
     /** @var array */
-    private $header;
+    private $header = [];
 
     /** @var array */
-    private $cookie;
+    private $cookie = [];
 
     /** @var int */
-    private $status;
+    private $status = 200;
 
     /** @var string */
-    private $html;
+    private $html = '';
 
-    /** @var array */
-    private $chunkData;
+    /** @var string */
+    private $chunkData = '';
 
     /**
      * @return array
@@ -99,18 +99,18 @@ class HttpResponsePayload
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getChunkData(): array
+    public function getChunkData(): string
     {
         return $this->chunkData;
     }
 
     /**
-     * @param array $chunkData
+     * @param string $chunkData
      * @return HttpResponsePayload
      */
-    public function setChunkData(array $chunkData): HttpResponsePayload
+    public function setChunkData(string $chunkData): HttpResponsePayload
     {
         $this->chunkData = $chunkData;
         return $this;

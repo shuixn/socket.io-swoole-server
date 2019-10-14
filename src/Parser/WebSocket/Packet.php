@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Parser;
+namespace SocketIO\Parser\WebSocket;
 
 use SocketIO\Enum\Message\PacketTypeEnum;
 use SocketIO\Enum\Message\TypeEnum;
@@ -10,7 +10,7 @@ use SocketIO\Enum\Message\TypeEnum;
 /**
  * Class Packet
  *
- * @package SocketIO\Parser
+ * @package SocketIO\Parser\WebSocket
  */
 class Packet
 {

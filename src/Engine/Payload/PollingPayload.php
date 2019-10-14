@@ -11,29 +11,49 @@ namespace SocketIO\Engine\Payload;
  */
 class PollingPayload
 {
+    /** @var array */
+    private $headers = [];
     /**
      * engine io version
      * @var int
      */
-    private $eio;
+    private $eio = 3;
 
     /**
      * polling or websocket
      * @var string
      */
-    private $transport;
+    private $transport = '';
 
     /**
      * random string
      * @var string
      */
-    private $t;
+    private $t = '';
 
     /**
      * client session id
      * @var string
      */
-    private $sid;
+    private $sid = '';
+
+    /**
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @param array $headers
+     * @return PollingPayload
+     */
+    public function setHeaders(array $headers): PollingPayload
+    {
+        $this->headers = $headers;
+        return $this;
+    }
 
     /**
      * @return int

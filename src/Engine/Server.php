@@ -7,13 +7,14 @@ namespace SocketIO\Engine;
 use SocketIO\Engine\Payload\ConfigPayload;
 use SocketIO\Engine\Payload\HttpResponsePayload;
 use SocketIO\Engine\Payload\PollingPayload;
-use SocketIO\Engine\Transport\Polling;
+use SocketIO\Engine\Transport\Xhr;
 use SocketIO\Enum\Message\TypeEnum;
-use SocketIO\Event\EventListenerTable;
-use SocketIO\Event\ListenerEventTable;
-use SocketIO\Event\ListenerTable;
-use SocketIO\Parser\Packet;
-use SocketIO\Parser\PacketPayload;
+use SocketIO\Storage\table\EventListenerTable;
+use SocketIO\Storage\table\ListenerEventTable;
+use SocketIO\Storage\table\ListenerTable;
+use SocketIO\Storage\table\SessionTable;
+use SocketIO\Parser\WebSocket\Packet;
+use SocketIO\Parser\WebSocket\PacketPayload;
 use SocketIO\Server as SocketIOServer;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
@@ -77,6 +78,12 @@ class Server
         echo "server: handshake success with fd{$request->fd}\n";
     }
 
+    /**
+     * @param HttpRequest $request
+     * @param HttpResponse $response
+     *
+     * @throws \Exception
+     */
     public function onRequest(HttpRequest $request, HttpResponse $response)
     {
         if ($request->server['request_uri'] === '/socket.io/') {
@@ -85,28 +92,40 @@ class Server
             $transport = $request->get['transport'] ?? '';
             $sid = $request->get['sid'] ?? '';
 
+            var_dump($request->header);
+            var_dump($request->server);
+
             switch ($request->server['request_method']) {
                 case 'GET':
                     $pollingPayload = new PollingPayload();
                     $pollingPayload
+                        ->setHeaders($request->header)
                         ->setEio($eio)
                         ->setT($t)
                         ->setTransport($transport);
 
-                    $polling = new Polling();
+                    $polling = new Xhr();
                     $responsePayload = $polling->handleGet($pollingPayload);
+
+                    SessionTable::getInstance()->push($polling->getSid(), -1);
                     break;
+
                 case 'POST':
+                    echo "post\n";
+                    var_dump($request->post);
+                    var_dump($request->server);
                     $pollingPayload = new PollingPayload();
                     $pollingPayload
+                        ->setHeaders($request->header)
                         ->setEio($eio)
                         ->setT($t)
                         ->setTransport($transport)
                         ->setSid($sid);
 
-                    $polling = new Polling();
+                    $polling = new Xhr();
                     $responsePayload = $polling->handlePost($pollingPayload);
                     break;
+
                 default:
                     $responsePayload = new HttpResponsePayload();
                     $responsePayload->setStatus(400)->setHtml('method not found');
@@ -118,7 +137,26 @@ class Server
         }
 
         $response->status($responsePayload->getStatus());
-        $response->end($responsePayload->getHtml());
+
+        if (!empty($responsePayload->getHeader())) {
+            foreach ($responsePayload->getHeader() as $key => $value) {
+                $response->setHeader($key, strval($value));
+            }
+        }
+
+        if (!empty($responsePayload->getCookie())) {
+            foreach ($responsePayload->getCookie() as $key => $value) {
+                $response->setCookie($key, $value);
+            }
+        }
+
+        if (!empty($responsePayload->getHtml())) {
+            $response->end($responsePayload->getHtml());
+        }
+
+        if (!empty($responsePayload->getChunkData())) {
+            $response->write($responsePayload->getChunkData());
+        }
 
         return;
     }

@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Event;
+namespace SocketIO\Storage\Table;
 
 use Swoole\Table;
 
 /**
- * Class ListenerEventTable
+ * Class ListenerTable
  *
- * @package SocketIO\Event
+ * @package SocketIO\Storage\Table
  */
-class ListenerEventTable
+class ListenerTable
 {
     /** @var string */
-    const KEY = 'events';
+    const KEY = 'fds';
 
     /**
-     * eg. fd => [ events => "['Namespace#Event#1', 'Namespace#Event#2']" ]
+     * eg. fds => [ fds => "['1', '2']" ]
      * @var Table
      */
     private $table;
 
-    /** @var ListenerEventTable */
+    /** @var ListenerTable */
     private static $instance = null;
 
     private function __construct(){}
@@ -39,10 +39,10 @@ class ListenerEventTable
     }
 
     /**
-     * @param int $raw default raw 65536
+     * @param int $raw default raw 1
      * @param int $size default size 4M
      */
-    private function initTable(int $raw = 65536, int $size = 4 * 1024 * 1024)
+    private function initTable(int $raw = 1, int $size = 4 * 1024 * 1024)
     {
         $this->table = new Table($raw);
         $this->table->column(self::KEY, Table::TYPE_STRING, $size);
@@ -50,70 +50,64 @@ class ListenerEventTable
     }
 
     /**
-     * @param string $namespace
-     * @param string $event
      * @param string $fd
      * @return bool
      * @throws \Exception
      */
-    public function push(string $namespace, string $event, string $fd) : bool
+    public function push(string $fd) : bool
     {
-        $event = $this->getEvent($namespace, $event);
-        if ($this->table->exist($fd)) {
-            $value = $this->table->get($fd, self::KEY);
+        if ($this->table->exist(self::KEY)) {
+            $value = $this->table->get(self::KEY, self::KEY);
             if ($value) {
                 $value = json_decode($value, true);
                 if (is_null($value)) {
                     throw new \Exception('json decode failed: ' . json_last_error_msg());
                 }
-                if (in_array($event, $value)) {
+                if (in_array($fd, $value)) {
                     return true;
                 } else {
-                    array_push($value, $event);
+                    array_push($value, $fd);
                     $value = [
                         self::KEY => json_encode($value)
                     ];
 
-                    return $this->setTable($fd, $value);
+                    return $this->setTable(self::KEY, $value);
                 }
             } else {
                 throw new \Exception('get table key return false');
             }
         } else {
             $value = [
-                self::KEY => json_encode([$event])
+                self::KEY => json_encode([$fd])
             ];
 
-            return $this->setTable($fd, $value);
+            return $this->setTable(self::KEY, $value);
         }
     }
 
     /**
-     * @param string $namespace
-     * @param string $event
      * @param string $fd
      * @return bool
      * @throws \Exception
      */
-    public function pop(string $namespace, string $event, string $fd) : bool
+    public function pop(string $fd) : bool
     {
-        $event = $this->getEvent($namespace, $event);
-        if ($this->table->exist($fd)) {
-            $value = $this->table->get($fd, self::KEY);
+        if ($this->table->exist(self::KEY)) {
+            $value = $this->table->get(self::KEY, self::KEY);
             if ($value) {
                 $value = json_decode($value, true);
                 if (is_null($value)) {
                     throw new \Exception('json decode failed: ' . json_last_error_msg());
                 }
-                if (!in_array($event, $value)) {
+                if (!in_array($fd, $value)) {
                     return true;
                 } else {
-                    $value = array_diff($value, [$event]);
+                    $value = array_diff($value, [$fd]);
                     $value = [
                         self::KEY => json_encode($value)
                     ];
 
-                    return $this->setTable($fd, $value);
+                    return $this->setTable(self::KEY, $value);
                 }
             } else {
                 throw new \Exception('get table key return false');
@@ -124,12 +118,22 @@ class ListenerEventTable
     }
 
     /**
-     * @param int $fd
-     * @return bool
+     * @return array
+     * @throws \Exception
      */
-    public function destroy(int $fd) : bool
+    public function getListener() : array
     {
-        return $this->table->del($fd);
+        $value = $this->table->get(self::KEY, self::KEY);
+        if ($value) {
+            $value = json_decode($value, true);
+            if (is_null($value)) {
+                throw new \Exception('json decode failed: ' . json_last_error_msg());
+            }
+
+            return $value;
+        } else {
+            throw new \Exception('get table key return false');
+        }
     }
 
     /**
@@ -141,30 +145,19 @@ class ListenerEventTable
     }
 
     /**
-     * @param string $fd
+     * @param string $key
      * @param array $value
      *
      * @return bool
      *
      * @throws \Exception
      */
-    private function setTable(string $fd, array $value): bool
+    private function setTable(string $key, array $value): bool
     {
-        if ($this->table->set($fd, $value)) {
+        if ($this->table->set($key, $value)) {
             return true;
         } else {
             throw new \Exception('set table key error');
         }
-    }
-
-    /**
-     * @param string $namespace
-     * @param string $event
-     *
-     * @return string
-     */
-    private function getEvent(string $namespace, string $event) : string
-    {
-        return "{$namespace}#{$event}";
     }
 }

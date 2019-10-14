@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace SocketIO\Event;
+namespace SocketIO\Storage\Table;
 
 use Swoole\Table;
 
 /**
  * Class EventListenerTable
  *
- * @package SocketIO\Event
+ * @package SocketIO\Storage\Table
  */
 class EventListenerTable
 {

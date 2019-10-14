@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace SocketIO\Engine\Transport;
 
-use SocketIO\Engine\Payload\HttpResponsePayload;
-use SocketIO\Engine\Payload\PollingPayload;
-
 /**
  * Class Polling
  *
@@ -14,23 +11,32 @@ use SocketIO\Engine\Payload\PollingPayload;
  */
 class Polling
 {
+    /** @var string */
+    protected $sid;
+
+    /** @var bool */
+    protected $isBinary = true;
+
+    /** @var int */
+    protected $pingInterval = 25000;
+
+    /** @var int */
+    protected $pingTimeout = 60000;
+
+    /** @var array */
+    protected $upgrades = ["websocket"];
+
     /**
-     * @param PollingPayload $pollingPayload
+     * @return string
      *
-     * @return HttpResponsePayload
+     * @throws \Exception
      */
-    public function handleGet(PollingPayload $pollingPayload) : HttpResponsePayload
+    public function getSid() : string
     {
+        if (empty($this->sid)) {
+            $this->sid = bin2hex(pack('d', microtime(true)).pack('N', function_exists('random_int') ? random_int(1, 100000000): rand(1, 100000000)));
+        }
 
-    }
-
-    /**
-     * @param PollingPayload $pollingPayload
-     *
-     * @return HttpResponsePayload
-     */
-    public function handlePost(PollingPayload $pollingPayload) : HttpResponsePayload
-    {
-
+        return $this->sid;
     }
 }

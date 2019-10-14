@@ -13,6 +13,11 @@ use SocketIO\Storage\MemoryInterface;
  */
 class SwooleTable implements MemoryInterface
 {
+    public function __construct()
+    {
+
+    }
+
     /**
      * @param string $key
      * @param string $value
