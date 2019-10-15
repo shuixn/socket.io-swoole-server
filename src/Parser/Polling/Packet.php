@@ -20,17 +20,18 @@ class Packet
      */
     public static function encode(int $type, string $data) : string
     {
-        $packet = $type . $data;
+        $packet = strval($type) . $data;
 
         $packetLength = strval(strlen($packet));
         $packetLengthBits = strlen($packetLength);
 
         $sizeCode = chr(0);
         for ($i = 0; $i < $packetLengthBits; $i++) {
-            $sizeCode .= chr($packetLengthBits[$i]);
+            $sizeCode .= chr(intval($packetLength[$i]));
         }
 
         $sizeCode .= chr(255);
+
         return $sizeCode . $packet;
     }
 

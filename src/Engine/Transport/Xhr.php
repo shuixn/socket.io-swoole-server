@@ -35,8 +35,10 @@ class Xhr extends Polling
                 'upgrades' => $this->upgrades
             ];
 
-            $packet = Packet::encode(TypeEnum::OPEN, json_encode($data));
-            $responsePayload->setChunkData($packet);
+            $engineIoPacket = Packet::encode(TypeEnum::OPEN, json_encode($data));
+            $socketIoPacket = Packet::encode(TypeEnum::MESSAGE, '0');
+
+            $responsePayload->setChunkData($engineIoPacket . $socketIoPacket);
         } else {
             $data = 0;
         }
