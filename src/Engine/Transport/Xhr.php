@@ -6,8 +6,12 @@ namespace SocketIO\Engine\Transport;
 
 use SocketIO\Engine\Payload\HttpResponsePayload;
 use SocketIO\Engine\Payload\PollingPayload;
+use SocketIO\Enum\Message\PacketTypeEnum;
 use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Parser\Polling\Packet;
+use SocketIO\Parser\Polling\Payload;
+use SocketIO\Storage\Table\NamespaceSessionTable;
+use SocketIO\Storage\Table\SessionTable;
 
 /**
  * Class Xhr
@@ -35,12 +39,24 @@ class Xhr extends Polling
                 'upgrades' => $this->upgrades
             ];
 
-            $engineIoPacket = Packet::encode(TypeEnum::OPEN, json_encode($data));
-            $socketIoPacket = Packet::encode(TypeEnum::MESSAGE, '0');
+            $socketIoPacket = Packet::encode(PacketTypeEnum::CONNECT, json_encode($data));
+            $engineIoPacket = Packet::encode(TypeEnum::MESSAGE, '0');
 
-            $responsePayload->setChunkData($engineIoPacket . $socketIoPacket);
+            $responsePayload->setChunkData($socketIoPacket . $engineIoPacket);
+
+            SessionTable::getInstance()->push($this->getSid(), -1);
         } else {
-            $data = 0;
+            // hanging request before websocket connected
+            $isHanging = true;
+            while ($isHanging) {
+                $sessionId = SessionTable::getInstance()->get($pollingPayload->getSid());
+                if ($sessionId !== -1) {
+                    $isHanging = false;
+                }
+            }
+
+            $engineIoPacket = Packet::encode(TypeEnum::NOOP, '');
+            $responsePayload->setChunkData($engineIoPacket);
         }
 
         $responsePayload->setHeader([
@@ -60,9 +76,63 @@ class Xhr extends Polling
      * @param PollingPayload $pollingPayload
      *
      * @return HttpResponsePayload
+     *
+     * @throws \Exception
      */
     public function handlePost(PollingPayload $pollingPayload) : HttpResponsePayload
     {
+        $responsePayload = new HttpResponsePayload();
 
+        $payloadData = new Payload();
+        $payloadData->decode($pollingPayload->getRequestPayload());
+
+        if ($this->enterNamespace($pollingPayload->getSid(), $payloadData)) {
+            $responsePayload->setHtml('ok');
+
+            $responsePayload->setHeader([
+                "Content-Type" => "Content-type: text/html;charset=UTF-8",
+                "Access-Control-Allow-Credentials" => 'true',
+                "Access-Control-Allow-Origin" => $pollingPayload->getHeaders()['origin'],
+                'Content-Length'=> strlen($responsePayload->getHtml()),
+                'X-XSS-Protection' => '0',
+            ]);
+
+            $responsePayload->setStatus(200);
+        } else {
+            $responsePayload->setHtml('enter namespace failed');
+
+            $responsePayload->setHeader([
+                "Content-Type" => "Content-type: text/html;charset=UTF-8",
+                "Access-Control-Allow-Credentials" => 'true',
+                "Access-Control-Allow-Origin" => $pollingPayload->getHeaders()['origin'],
+                'Content-Length'=> strlen($responsePayload->getHtml()),
+                'X-XSS-Protection' => '0',
+            ]);
+
+            $responsePayload->setStatus(500);
+        }
+
+        return $responsePayload;
+    }
+
+    /**
+     * @param string $sid
+     * @param Payload $payloadData
+     *
+     * @return bool
+     *
+     * @throws \Exception
+     */
+    private function enterNamespace(string $sid, Payload $payloadData): bool
+    {
+        if (!empty($sid)
+            && $payloadData->getType() === TypeEnum::MESSAGE
+            && $payloadData->getPacketType() === PacketTypeEnum::CONNECT
+            && !empty($payloadData->getNamespace())) {
+
+            return NamespaceSessionTable::getInstance()->push($payloadData->getNamespace(), $sid);
+        }
+
+        return false;
     }
 }

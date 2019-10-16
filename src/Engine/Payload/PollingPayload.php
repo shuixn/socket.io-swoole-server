@@ -13,6 +13,10 @@ class PollingPayload
 {
     /** @var array */
     private $headers = [];
+
+    /** @var string */
+    private $requestPayload = '';
+
     /**
      * engine io version
      * @var int
@@ -52,6 +56,24 @@ class PollingPayload
     public function setHeaders(array $headers): PollingPayload
     {
         $this->headers = $headers;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRequestPayload(): string
+    {
+        return $this->requestPayload;
+    }
+
+    /**
+     * @param string $requestPayload
+     * @return PollingPayload
+     */
+    public function setRequestPayload(string $requestPayload): PollingPayload
+    {
+        $this->requestPayload = $requestPayload;
         return $this;
     }
 

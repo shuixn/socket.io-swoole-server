@@ -9,6 +9,8 @@ use SocketIO\Enum\BaseEnum;
 /**
  * Class PacketTypeEnum
  *
+ * SocketIO Packet
+ *
  * @package SocketIO\Enum\Message
  */
 class PacketTypeEnum extends BaseEnum
@@ -32,6 +34,11 @@ class PacketTypeEnum extends BaseEnum
      * @message("ack")
      */
     public const ACK = 3;
+
+    /**
+     * @message("error")
+     */
+    public const ERROR = 4;
 
     /**
      * @message("binary_event")

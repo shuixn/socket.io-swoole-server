@@ -9,7 +9,7 @@ try {
     $config = new SocketIO\Engine\Payload\ConfigPayload();
     $config
         // server worker_num
-        ->setWorkerNum(1)
+        ->setWorkerNum(2)
         // server daemonize
         ->setDaemonize(0);
 

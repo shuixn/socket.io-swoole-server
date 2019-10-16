@@ -104,7 +104,7 @@ class PacketPayload
      */
     public function setNamespace(string $namespace): PacketPayload
     {
-        if ($namespace[0] == '/') {
+        if (isset($namespace[0]) && $namespace[0] == '/') {
             $this->namespace = $namespace;
         } else {
             $this->namespace = !empty($namespace) ? "/{$namespace}" : '/';

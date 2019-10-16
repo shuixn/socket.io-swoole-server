@@ -49,6 +49,11 @@ class Packet
             } else {
                 $event = '';
                 $message = '';
+
+                if ($namespace == 'probe') {
+                    $namespace = '';
+                    $message = 'probe';
+                }
             }
 
             $packetPayload
@@ -68,8 +73,12 @@ class Packet
                     case TypeEnum::PING:
                         $packetPayload->setType(TypeEnum::PING);
                         break;
+                    case TypeEnum::UPGRADE:
+                        $packetPayload->setType(TypeEnum::UPGRADE);
+                        break;
                 }
                 break;
+
             case 2:
                 switch ($code) {
                     case TypeEnum::MESSAGE . PacketTypeEnum::DISCONNECT:

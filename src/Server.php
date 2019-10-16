@@ -12,6 +12,7 @@ use SocketIO\Event\EventPayload;
 use SocketIO\Storage\Table\ListenerTable;
 use SocketIO\Parser\WebSocket\Packet;
 use SocketIO\Parser\WebSocket\PacketPayload;
+use SocketIO\Storage\Table\SessionTable;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use SocketIO\ExceptionHandler\InvalidEventException;
@@ -180,6 +181,13 @@ class Server
 
     public function start()
     {
+        $this->initTables();
+
         new EngineServer($this->port, $this->configPayload, $this->eventPool);
+    }
+
+    private function initTables()
+    {
+        SessionTable::getInstance();
     }
 }

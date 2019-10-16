@@ -70,15 +70,6 @@ class Server
     }
 
     /**
-     * @param WebSocketServer $server
-     * @param HttpRequest $request
-     */
-    public function onOpen(WebSocketServer $server, HttpRequest $request)
-    {
-        echo "server: handshake success with fd{$request->fd}\n";
-    }
-
-    /**
      * @param HttpRequest $request
      * @param HttpResponse $response
      *
@@ -87,37 +78,31 @@ class Server
     public function onRequest(HttpRequest $request, HttpResponse $response)
     {
         if ($request->server['request_uri'] === '/socket.io/') {
-            $eio = $request->get['eio'] ?? 0;
+            $eio = $request->get['EIO'] ?? 0;
             $t = $request->get['t'] ?? '';
             $transport = $request->get['transport'] ?? '';
             $sid = $request->get['sid'] ?? '';
-
-            var_dump($request->header);
-            var_dump($request->server);
 
             switch ($request->server['request_method']) {
                 case 'GET':
                     $pollingPayload = new PollingPayload();
                     $pollingPayload
                         ->setHeaders($request->header)
-                        ->setEio($eio)
+                        ->setEio(intval($eio))
+                        ->setSid($sid)
                         ->setT($t)
                         ->setTransport($transport);
 
                     $polling = new Xhr();
                     $responsePayload = $polling->handleGet($pollingPayload);
-
-                    SessionTable::getInstance()->push($polling->getSid(), -1);
                     break;
 
                 case 'POST':
-                    echo "post\n";
-                    var_dump($request->post);
-                    var_dump($request->server);
                     $pollingPayload = new PollingPayload();
                     $pollingPayload
                         ->setHeaders($request->header)
-                        ->setEio($eio)
+                        ->setRequestPayload($request->rawContent())
+                        ->setEio(intval($eio))
                         ->setT($t)
                         ->setTransport($transport)
                         ->setSid($sid);
@@ -163,24 +148,55 @@ class Server
 
     /**
      * @param WebSocketServer $server
+     * @param HttpRequest $request
+     *
+     * @throws \Exception
+     */
+    public function onOpen(WebSocketServer $server, HttpRequest $request)
+    {
+        echo "server: handshake success with fd{$request->fd}\n";
+
+        if ($request->server['request_uri'] === '/socket.io/') {
+            $eio = $request->get['EIO'] ?? 0;
+            $transport = $request->get['transport'] ?? '';
+            $sid = $request->get['sid'] ?? '';
+
+            if (intval($eio) == 3 && $transport == 'websocket' && !empty($sid)) {
+                SessionTable::getInstance()->push($sid, $request->fd);
+            }
+
+        } else {
+            echo "illegal uri\n";
+        }
+    }
+
+    /**
+     * @param WebSocketServer $server
      * @param WebSocketFrame $frame
      *
      * @throws \Exception
      */
     public function onMessage(WebSocketServer $server, WebSocketFrame $frame)
     {
+        echo "websocket\n";
+        var_dump($frame->data);
+
         $packetPayload = Packet::decode($frame->data);
 
         switch ($packetPayload->getType()) {
             case TypeEnum::PING:
-                $server->push($frame->fd, TypeEnum::PONG);
+                $message = $packetPayload->getMessage();
+                $server->push($frame->fd, TypeEnum::PONG . $message);
                 break;
+
             case TypeEnum::MESSAGE:
                 $this->handleEvent($server, $frame, $packetPayload);
                 break;
+
             case TypeEnum::UPGRADE:
                 $server->push($frame->fd, TypeEnum::NOOP);
                 break;
+
             default:
                 $server->push($frame->fd, 'unknown message or wrong packet');
                 break;

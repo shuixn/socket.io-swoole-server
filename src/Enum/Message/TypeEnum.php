@@ -9,6 +9,8 @@ use SocketIO\Enum\BaseEnum;
 /**
  * Class TypeEnum
  *
+ * EngineIO Packet
+ *
  * @package SocketIO\Enum\Message
  */
 class TypeEnum extends BaseEnum
