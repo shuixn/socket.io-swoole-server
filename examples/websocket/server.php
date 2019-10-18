@@ -13,15 +13,22 @@ try {
         // server daemonize
         ->setDaemonize(0);
 
-    $io = new SocketIO\Server(9501, $config);
-    $io->of('/test')->on('new message', function (SocketIO\Server $socket) {
-        $socket->emit('new message', [
-            'data' => $socket->getMessage()
-        ]);
-    });
+    $io = new SocketIO\Server(9501, $config, function(SocketIO\Server $io) {
+        $io->on('connection', function (SocketIO\Server $socket) {
+            $socket->on('new message', function (SocketIO\Server $socket) {
+                $socket->emit('new message', [
+                    'data' => $socket->getMessage()
+                ]);
+            });
 
-    $io->on('new user', function (SocketIO\Server $socket) {
-        $socket->broadcast('hello');
+            $socket->on('new user', function (SocketIO\Server $socket) {
+                $socket->broadcast('hello');
+            });
+
+            $socket->on('disconnect', function (SocketIO\Server $socket) {
+                $socket->broadcast('user left');
+            });
+        });
     });
 
     $io->start();

@@ -45,6 +45,8 @@ class Xhr extends Polling
             $responsePayload->setChunkData($socketIoPacket . $engineIoPacket);
 
             SessionTable::getInstance()->push($this->getSid(), -1);
+
+            NamespaceSessionTable::getInstance()->push('/', $this->getSid());
         } else {
             // hanging request before websocket connected
             $isHanging = true;

@@ -9,18 +9,17 @@ use SocketIO\Engine\Payload\HttpResponsePayload;
 use SocketIO\Engine\Payload\PollingPayload;
 use SocketIO\Engine\Transport\Xhr;
 use SocketIO\Enum\Message\TypeEnum;
+use SocketIO\Event\EventPool;
 use SocketIO\Storage\table\EventListenerTable;
 use SocketIO\Storage\table\ListenerEventTable;
 use SocketIO\Storage\table\ListenerTable;
 use SocketIO\Storage\table\SessionTable;
 use SocketIO\Parser\WebSocket\Packet;
 use SocketIO\Parser\WebSocket\PacketPayload;
-use SocketIO\Server as SocketIOServer;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\WebSocket\Frame as WebSocketFrame;
 use Swoole\Http\Request as HttpRequest;
 use Swoole\Http\Response as HttpResponse;
-use SocketIO\Event\EventPayload;
 
 /**
  * Class Server
@@ -34,22 +33,28 @@ class Server
 
     /** @var array */
     protected $serverEvents = [
-        'request', 'open', 'message', 'close'
+        'workerStart', 'request', 'open', 'message', 'close'
     ];
 
-    /** @var array */
-    protected $eventPool;
+    /** @var Callable */
+    private $callback;
+
+    /** @var \SocketIO\Server */
+    private $socketIOServer;
 
     /**
      * Server constructor.
      *
      * @param int $port
      * @param ConfigPayload $configPayload
-     * @param array $eventPool
+     * @param callable $callback
+     * @param \SocketIO\Server $socketIOServer
      */
-    public function __construct(int $port, ConfigPayload $configPayload, array $eventPool) {
+    public function __construct(int $port, ConfigPayload $configPayload, Callable $callback, \SocketIO\Server $socketIOServer) {
 
-        $this->eventPool = $eventPool;
+        $this->callback = $callback;
+
+        $this->socketIOServer = $socketIOServer;
 
         $this->server = new WebSocketServer("0.0.0.0", $port);
 
@@ -69,6 +74,12 @@ class Server
         $this->server->start();
     }
 
+    public function onWorkerStart()
+    {
+        $callback = $this->callback;
+        $callback($this->socketIOServer);
+    }
+
     /**
      * @param HttpRequest $request
      * @param HttpResponse $response
@@ -78,7 +89,7 @@ class Server
     public function onRequest(HttpRequest $request, HttpResponse $response)
     {
         if ($request->server['request_uri'] === '/socket.io/') {
-            $eio = $request->get['EIO'] ?? 0;
+            $eio = intval($request->get['EIO']) ?? 0;
             $t = $request->get['t'] ?? '';
             $transport = $request->get['transport'] ?? '';
             $sid = $request->get['sid'] ?? '';
@@ -88,7 +99,7 @@ class Server
                     $pollingPayload = new PollingPayload();
                     $pollingPayload
                         ->setHeaders($request->header)
-                        ->setEio(intval($eio))
+                        ->setEio($eio)
                         ->setSid($sid)
                         ->setT($t)
                         ->setTransport($transport);
@@ -102,7 +113,7 @@ class Server
                     $pollingPayload
                         ->setHeaders($request->header)
                         ->setRequestPayload($request->rawContent())
-                        ->setEio(intval($eio))
+                        ->setEio($eio)
                         ->setT($t)
                         ->setTransport($transport)
                         ->setSid($sid);
@@ -113,7 +124,7 @@ class Server
 
                 default:
                     $responsePayload = new HttpResponsePayload();
-                    $responsePayload->setStatus(400)->setHtml('method not found');
+                    $responsePayload->setStatus(405)->setHtml('method not found');
                     break;
             }
         } else {
@@ -157,14 +168,15 @@ class Server
         echo "server: handshake success with fd{$request->fd}\n";
 
         if ($request->server['request_uri'] === '/socket.io/') {
-            $eio = $request->get['EIO'] ?? 0;
+            $eio = intval($request->get['EIO']) ?? 0;
             $transport = $request->get['transport'] ?? '';
             $sid = $request->get['sid'] ?? '';
 
-            if (intval($eio) == 3 && $transport == 'websocket' && !empty($sid)) {
+            if ($eio == 3 && $transport == 'websocket' && !empty($sid)) {
                 SessionTable::getInstance()->push($sid, $request->fd);
-            }
 
+                $this->produceEvent($server, '/', 'connection', $request->fd);
+            }
         } else {
             echo "illegal uri\n";
         }
@@ -190,7 +202,7 @@ class Server
                 break;
 
             case TypeEnum::MESSAGE:
-                $this->handleEvent($server, $frame, $packetPayload);
+                $this->handleEvent($server, $frame->fd, $packetPayload);
                 break;
 
             case TypeEnum::UPGRADE:
@@ -211,52 +223,52 @@ class Server
     {
         echo "client {$fd} closed\n";
 
-        /** @var EventPayload $event */
-        foreach ($this->eventPool as $event) {
-            $event->popListener($fd);
-        }
+        $this->produceEvent($server, '/', 'disconnect', $fd);
 
         // todo clear table event and fd
     }
 
     /**
      * @param WebSocketServer $server
-     * @param WebSocketFrame $frame
+     * @param int $fd
      * @param PacketPayload $packetPayload
      *
      * @throws \Exception
      */
-    private function handleEvent(WebSocketServer $server, WebSocketFrame $frame, PacketPayload $packetPayload)
+    private function handleEvent(WebSocketServer $server, int $fd, PacketPayload $packetPayload)
     {
         $namespace = $packetPayload->getNamespace();
         $eventName = $packetPayload->getEvent();
 
-        $isExistEvent = false;
+        EventListenerTable::getInstance()->push($namespace, $eventName, $fd);
+        ListenerEventTable::getInstance()->push($namespace, $eventName, strval($fd));
+        ListenerTable::getInstance()->push(strval($fd));
 
-        /** @var EventPayload $event */
-        foreach ($this->eventPool as $event) {
-            if ($event->getNamespace() == $namespace && $event->getName() == $eventName) {
-                $isExistEvent = true;
+        $this->produceEvent($server, $namespace, $eventName, $fd, $packetPayload->getMessage());
+    }
 
-                $event->pushListener($frame->fd);
-                EventListenerTable::getInstance()->push($namespace, $eventName, $frame->fd);
-                ListenerEventTable::getInstance()->push($namespace, $eventName, strval($frame->fd));
-                ListenerTable::getInstance()->push(strval($frame->fd));
+    /**
+     * @param WebSocketServer $server
+     * @param string $namespace
+     * @param string $event
+     * @param int $fd
+     * @param string $message
+     */
+    private function produceEvent(WebSocketServer $server, string $namespace, string $event, int $fd, string $message = '')
+    {
+        $eventPayload = EventPool::getInstance()->get($namespace, $event);
+        if (!is_null($eventPayload)) {
+            $chan = $eventPayload->getChan();
 
-                /** @var SocketIOServer $socket */
-                $socket = $event->getSocket();
-                $socket->setMessage($packetPayload->getMessage());
-                $socket->setWebSocketServer($server);
-                $socket->setWebSocketFrame($frame);
-
-                $callback = $event->getCallback();
-
-                $callback($socket);
-            }
-        }
-
-        if (!$isExistEvent) {
-            $server->push($frame->fd, 'Bad Event');
+            go(function () use ($chan, $server, $fd, $message) {
+                $chan->push([
+                    'webSocketServer' =>  $server,
+                    'fd' => $fd,
+                    'message' => $message
+                ]);
+            });
+        } else {
+            echo "EventPool not found this namespace[{$namespace}] and event[{$event}]\n";
         }
     }
 }

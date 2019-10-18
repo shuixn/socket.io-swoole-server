@@ -9,41 +9,31 @@
 $config = new SocketIO\Engine\Server\ConfigPayload();
 $config
     // server worker_num
-    ->setWorkerNum(1)
+    ->setWorkerNum(2)
     // server daemonize
     ->setDaemonize(0);
 ```
 
-### Default Namespace
+### Examples
 
 ```php
-$io = new SocketIO\Server(9991, $config);
-$io->on('new message', function (SocketIO\Server $socket) {
-    $socket->emit('new message', [
-        'data' => $socket->getMessage()
-    ]);
+$io = new SocketIO\Server(9501, $config, function(SocketIO\Server $io) {
+    $io->on('connection', function (SocketIO\Server $socket) {
+        $socket->on('new message', function (SocketIO\Server $socket) {
+            $socket->emit('new message', [
+                'data' => $socket->getMessage()
+            ]);
+        });
+
+        $socket->on('new user', function (SocketIO\Server $socket) {
+            $socket->broadcast('hello');
+        });
+
+        $socket->on('disconnect', function (SocketIO\Server $socket) {
+            $socket->broadcast('user left');
+        });
+    });
 });
 
 $io->start();
-```
-
-### Custom Namespace
-
-```php
-$io = new SocketIO\Server(9991, $config);
-$io->of('/test')->on('new message', function (SocketIO\Server $socket) {
-    $socket->emit('new message', [
-        'data' => $socket->getMessage()
-    ]);
-});
-
-$io->start();
-```
-
-### Broadcast
-
-```php
-$io->on('new user', function (SocketIO\Server $socket) {
-    $socket->broadcast('hello');
-});
 ```

@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace SocketIO;
 
+use Co\Channel;
 use SocketIO\Engine\Payload\ConfigPayload;
 use SocketIO\Engine\Server as EngineServer;
 use SocketIO\Enum\Message\PacketTypeEnum;
 use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event\EventPayload;
+use SocketIO\Event\EventPool;
+use SocketIO\Storage\Table\EventListenerTable;
+use SocketIO\Storage\Table\ListenerEventTable;
 use SocketIO\Storage\Table\ListenerTable;
 use SocketIO\Parser\WebSocket\Packet;
 use SocketIO\Parser\WebSocket\PacketPayload;
 use SocketIO\Storage\Table\SessionTable;
 use Swoole\WebSocket\Server as WebSocketServer;
-use Swoole\WebSocket\Frame as WebSocketFrame;
 use SocketIO\ExceptionHandler\InvalidEventException;
 
 /**
@@ -24,14 +27,17 @@ use SocketIO\ExceptionHandler\InvalidEventException;
  */
 class Server
 {
+    /** @var Callable */
+    private $callback;
+
     /** @var string */
     private $namespace = '/';
 
     /** @var WebSocketServer */
     private $webSocketServer;
 
-    /** @var WebSocketFrame */
-    private $webSocketFrame;
+    /** @var int */
+    private $fd;
 
     /** @var string */
     private $message;
@@ -42,14 +48,13 @@ class Server
     /** @var ConfigPayload */
     private $configPayload;
 
-    /** @var array */
-    private $eventPool = [];
-
-    public function __construct(int $port, ConfigPayload $configPayload)
+    public function __construct(int $port, ConfigPayload $configPayload, Callable $callback)
     {
         $this->port = $port;
 
         $this->configPayload = $configPayload;
+
+        $this->callback = $callback;
     }
 
     /**
@@ -73,22 +78,20 @@ class Server
     }
 
     /**
-     * @return WebSocketFrame
+     * @return int
      */
-    public function getWebSocketFrame(): WebSocketFrame
+    public function getFd(): int
     {
-        return $this->webSocketFrame;
+        return $this->fd;
     }
 
     /**
-     * @param WebSocketFrame $webSocketFrame
-     *
+     * @param int $fd
      * @return Server
      */
-    public function setWebSocketFrame(WebSocketFrame $webSocketFrame): self
+    public function setFd(int $fd): Server
     {
-        $this->webSocketFrame = $webSocketFrame;
-
+        $this->fd = $fd;
         return $this;
     }
 
@@ -133,17 +136,41 @@ class Server
             throw new InvalidEventException('invalid Event');
         }
 
-        $event = new EventPayload();
-        $event
-            ->setNamespace($this->namespace)
-            ->setName($eventName)
-            ->setCallback($callback)
-            ->setListeners([])
-            ->setSocket($this);
-
-        array_push($this->eventPool, $event);
+        $this->consumeEvent($eventName, $callback);
 
         return $this;
+    }
+
+    private function consumeEvent(string $eventName, callable $callback)
+    {
+        if (!EventPool::getInstance()->isExist($this->namespace, $eventName)) {
+            $chan = new Channel();
+            $eventPayload = new EventPayload();
+            $eventPayload
+                ->setNamespace($this->namespace)
+                ->setName($eventName)
+                ->setChan($chan);
+
+            EventPool::getInstance()->push($eventPayload);
+
+            go(function () use ($chan, $eventName, $callback) {
+                while($data = $chan->pop()) {
+                    $webSocketServer = $data['webSocketServer'] ?? null;
+                    $fd = $data['fd'] ?? 0;
+                    $message = $data['message'] ?? '';
+
+                    $this->setWebSocketServer($webSocketServer);
+                    if ($fd != 0) {
+                        $this->setFd($fd);
+                    }
+                    $this->setMessage($message);
+
+                    $callback($this);
+                }
+            });
+        }
+
+        return;
     }
 
     /**
@@ -160,7 +187,7 @@ class Server
             ->setPacketType(PacketTypeEnum::EVENT)
             ->setMessage(json_encode($data));
 
-        $this->webSocketServer->push($this->webSocketFrame->fd, Packet::encode($packetPayload));
+        $this->webSocketServer->push($this->fd, Packet::encode($packetPayload));
     }
 
     /**
@@ -175,7 +202,7 @@ class Server
                 $this->webSocketServer->push(intval($listener), $data);
             }
         } else {
-            $this->webSocketServer->push($this->webSocketFrame->fd, $data);
+            $this->webSocketServer->push($this->fd, $data);
         }
     }
 
@@ -183,11 +210,14 @@ class Server
     {
         $this->initTables();
 
-        new EngineServer($this->port, $this->configPayload, $this->eventPool);
+        new EngineServer($this->port, $this->configPayload, $this->callback, $this);
     }
 
     private function initTables()
     {
         SessionTable::getInstance();
+        EventListenerTable::getInstance();
+        ListenerEventTable::getInstance();
+        ListenerTable::getInstance();
     }
 }
