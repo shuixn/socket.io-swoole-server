@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SocketIO;
 
 use Co\Channel;
+use SocketIO\Engine\Payload\ChannelPayload;
 use SocketIO\Engine\Payload\ConfigPayload;
 use SocketIO\Engine\Server as EngineServer;
 use SocketIO\Enum\Message\PacketTypeEnum;
@@ -154,16 +155,17 @@ class Server
             EventPool::getInstance()->push($eventPayload);
 
             go(function () use ($chan, $eventName, $callback) {
-                while($data = $chan->pop()) {
-                    $webSocketServer = $data['webSocketServer'] ?? null;
-                    $fd = $data['fd'] ?? 0;
-                    $message = $data['message'] ?? '';
+                /** @var ChannelPayload $channelPayload */
+                while($channelPayload = $chan->pop()) {
+                    $webSocketServer = $channelPayload->getWebSocketServer() ?? null;
+                    $message = $channelPayload->getMessage() ?? '';
+                    $fd = $channelPayload->getFd() ?? 0;
 
                     $this->setWebSocketServer($webSocketServer);
+                    $this->setMessage($message);
                     if ($fd != 0) {
                         $this->setFd($fd);
                     }
-                    $this->setMessage($message);
 
                     $callback($this);
                 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SocketIO\Engine;
 
+use SocketIO\Engine\Payload\ChannelPayload;
 use SocketIO\Engine\Payload\ConfigPayload;
 use SocketIO\Engine\Payload\HttpResponsePayload;
 use SocketIO\Engine\Payload\PollingPayload;
@@ -176,9 +177,12 @@ class Server
                 SessionTable::getInstance()->push($sid, $request->fd);
 
                 $this->produceEvent($server, '/', 'connection', $request->fd);
+            } else {
+                $server->close($request->fd);
             }
         } else {
             echo "illegal uri\n";
+            $server->close($request->fd);
         }
     }
 
@@ -257,15 +261,19 @@ class Server
     private function produceEvent(WebSocketServer $server, string $namespace, string $event, int $fd, string $message = '')
     {
         $eventPayload = EventPool::getInstance()->get($namespace, $event);
-        if (!is_null($eventPayload)) {
-            $chan = $eventPayload->getChan();
 
-            go(function () use ($chan, $server, $fd, $message) {
-                $chan->push([
-                    'webSocketServer' =>  $server,
-                    'fd' => $fd,
-                    'message' => $message
-                ]);
+        $chan = $eventPayload->getChan();
+
+        if (!is_null($chan)) {
+
+            $channelPayload = new ChannelPayload();
+            $channelPayload
+                ->setWebSocketServer($server)
+                ->setFd($fd)
+                ->setMessage($message);
+
+            go(function () use ($chan, $channelPayload) {
+                $chan->push($channelPayload);
             });
         } else {
             echo "EventPool not found this namespace[{$namespace}] and event[{$event}]\n";

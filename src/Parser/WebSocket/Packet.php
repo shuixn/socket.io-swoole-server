@@ -45,7 +45,7 @@ class Packet
             $packetData = json_decode($packet, true);
             if (!empty($packetData)) {
                 $event = $packetData[0];
-                $message = json_encode($packetData[1]);
+                $message = is_array($packetData[1]) ? json_encode($packetData[1]) : $packetData[1];
             } else {
                 $event = '';
                 $message = '';

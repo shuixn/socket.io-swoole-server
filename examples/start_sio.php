@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 try {
 
@@ -22,7 +22,9 @@ try {
             });
 
             $socket->on('new user', function (SocketIO\Server $socket) {
-                $socket->broadcast('hello');
+                $socket->emit('login', [
+                    'username' => $socket->getMessage()
+                ]);
             });
 
             $socket->on('disconnect', function (SocketIO\Server $socket) {

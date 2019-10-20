@@ -73,18 +73,19 @@ class EventPool
      * @param string $namespace
      * @param string $eventName
      *
-     * @return EventPayload|null
+     * @return EventPayload
      */
     public function pop(string $namespace, string $eventName) : EventPayload
     {
-        $data = null;
+        $eventPayload = new EventPayload();
         $index = null;
 
         /** @var EventPayload $item */
         foreach ($this->pool as $key => $item) {
             if ($item->getNamespace() == $namespace && $item->getName() == $eventName) {
                 $index = $key;
-                $data = $item;
+                $eventPayload = $item;
+                break;
             }
         }
 
@@ -92,24 +93,27 @@ class EventPool
             unset($this->pool[$index]);
         }
 
-        return $data;
+        return $eventPayload;
     }
 
     /**
      * @param string $namespace
      * @param string $eventName
      *
-     * @return EventPayload|null
+     * @return EventPayload
      */
     public function get(string $namespace, string $eventName) : EventPayload
     {
+        $eventPayload = new EventPayload();
+
         /** @var EventPayload $item */
         foreach ($this->pool as $item) {
             if ($item->getNamespace() == $namespace && $item->getName() == $eventName) {
-                return $item;
+                $eventPayload = $item;
+                break;
             }
         }
 
-        return null;
+        return $eventPayload;
     }
 }
