@@ -1,0 +1,20 @@
+language: php
+
+sudo: required
+
+matrix:
+  include:
+    - php: 7.1
+      env: SW_VERSION="4.0.3"
+    - php: 7.1
+      env: SW_VERSION="4.4.7"
+
+install:
+  - cd $TRAVIS_BUILD_DIR
+  - bash .travis/swoole.install.sh
+
+before_script:
+  - composer install
+
+script:
+  phpunit -c phpunit.xml

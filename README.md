@@ -1,6 +1,8 @@
 # socket.io-swoole-server
 :rainbow: Socket.io Server implementation for Swoole
 
+![Build Status](https://travis-ci.org/funsoul/socket.io-swoole-server.svg?branch=master)
+
 ## Server
 
 ### Server Config
