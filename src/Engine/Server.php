@@ -11,10 +11,9 @@ use SocketIO\Engine\Payload\PollingPayload;
 use SocketIO\Engine\Transport\Xhr;
 use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Event\EventPool;
-use SocketIO\Storage\table\EventListenerTable;
-use SocketIO\Storage\table\ListenerEventTable;
+use SocketIO\Storage\Table\ListenerSessionTable;
 use SocketIO\Storage\table\ListenerTable;
-use SocketIO\Storage\table\SessionTable;
+use SocketIO\Storage\table\SessionListenerTable;
 use SocketIO\Parser\WebSocket\Packet;
 use SocketIO\Parser\WebSocket\PacketPayload;
 use Swoole\WebSocket\Server as WebSocketServer;
@@ -75,6 +74,9 @@ class Server
         $this->server->start();
     }
 
+    /**
+     * block event listening
+     */
     public function onWorkerStart()
     {
         $callback = $this->callback;
@@ -174,7 +176,8 @@ class Server
             $sid = $request->get['sid'] ?? '';
 
             if ($eio == 3 && $transport == 'websocket' && !empty($sid)) {
-                SessionTable::getInstance()->push($sid, $request->fd);
+                SessionListenerTable::getInstance()->push($sid, $request->fd);
+                ListenerSessionTable::getInstance()->push(strval($request->fd), $sid);
 
                 $this->produceEvent($server, '/', 'connection', $request->fd);
             } else {
@@ -222,14 +225,19 @@ class Server
     /**
      * @param WebSocketServer $server
      * @param int $fd
+     *
+     * @throws \Exception
      */
     public function onClose(WebSocketServer $server, int $fd)
     {
-        echo "client {$fd} closed\n";
+        $sid = ListenerSessionTable::getInstance()->pop(strval($fd));
+        $fd = SessionListenerTable::getInstance()->pop($sid);
+
+        ListenerTable::getInstance()->pop(strval($fd));
 
         $this->produceEvent($server, '/', 'disconnect', $fd);
 
-        // todo clear table event and fd
+        echo "client closed sid: {$sid}, fd: {$fd}\n";
     }
 
     /**
@@ -244,8 +252,6 @@ class Server
         $namespace = $packetPayload->getNamespace();
         $eventName = $packetPayload->getEvent();
 
-        EventListenerTable::getInstance()->push($namespace, $eventName, $fd);
-        ListenerEventTable::getInstance()->push($namespace, $eventName, strval($fd));
         ListenerTable::getInstance()->push(strval($fd));
 
         $this->produceEvent($server, $namespace, $eventName, $fd, $packetPayload->getMessage());

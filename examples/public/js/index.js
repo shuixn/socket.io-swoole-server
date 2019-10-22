@@ -8,10 +8,12 @@ $(function() {
             if (isEnter) {
                 var message = $('#msg').val();
                 if (message.length !== 0) {
-                    socket.emit('new message', message);
+                    socket.emit('new message', {
+                        nickname: nickname,
+                        message: message
+                    });
 
                     $('#msg').val('');
-                    $('#chat').append('<li>' + nickname + ':' + message + '</li>');
                 }
             } else {
                 nickname = $('#nickname').val();
@@ -26,12 +28,25 @@ $(function() {
                 $('#msg').focus();
                 
 
-                socket.emit('new user', nickname);
+                socket.emit('new user', {
+                    nickname: nickname
+                });
             }
         }
     });
 
     socket.on('login', function (data) {
-        $('#chat').append('<li>Welcome ' + data.username.toString() + '!</li>');
+        data = JSON.parse(data);
+        $('#chat').append('<li>Welcome ' + data.nickname + '!</li>');
+    });
+
+    socket.on('new message', function (data) {
+        data = JSON.parse(data);
+        $('#chat').append('<li>' + data.nickname + ':' + data.message + '</li>');
+    });
+
+    socket.on('user left', function (data) {
+        data = JSON.parse(data);
+        $('#chat').append('<li>' + data.nickname + ' has left</li>');
     });
 });

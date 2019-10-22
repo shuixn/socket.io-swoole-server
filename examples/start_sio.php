@@ -16,19 +16,15 @@ try {
     $io = new SocketIO\Server(9501, $config, function(SocketIO\Server $io) {
         $io->on('connection', function (SocketIO\Server $socket) {
             $socket->on('new message', function (SocketIO\Server $socket) {
-                $socket->emit('new message', [
-                    'data' => $socket->getMessage()
-                ]);
+                $socket->broadcast('new message', $socket->getMessage());
             });
 
             $socket->on('new user', function (SocketIO\Server $socket) {
-                $socket->emit('login', [
-                    'username' => $socket->getMessage()
-                ]);
+                $socket->broadcast('login', $socket->getMessage());
             });
 
             $socket->on('disconnect', function (SocketIO\Server $socket) {
-                $socket->broadcast('user left');
+                $socket->broadcast('user left', $socket->getMessage());
             });
         });
     });

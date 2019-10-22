@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SocketIO;
 
 use PHPUnit\Framework\TestCase;
-use SocketIO\Storage\Table\SessionTable;
+use SocketIO\Storage\Table\SessionListenerTable;
 
 /**
  * Class SessionTableTest
@@ -14,14 +14,14 @@ use SocketIO\Storage\Table\SessionTable;
  */
 class SessionTableTest extends TestCase
 {
-    /** @var SessionTable */
+    /** @var SessionListenerTable */
     private $sessionTable;
 
     public function __construct($name = null, array $data = [], $dataName = '')
     {
         parent::__construct($name, $data, $dataName);
 
-        $this->sessionTable = SessionTable::getInstance();
+        $this->sessionTable = SessionListenerTable::getInstance();
     }
 
     public function testCount()

@@ -11,17 +11,8 @@ use Swoole\Table;
  *
  * @package SocketIO\Storage\Table
  */
-class ListenerTable
+class ListenerTable extends BaseTable
 {
-    /** @var string */
-    const KEY = 'fds';
-
-    /**
-     * eg. fds => [ fds => "['1', '2']" ]
-     * @var Table
-     */
-    private $table;
-
     /** @var ListenerTable */
     private static $instance = null;
 
@@ -39,13 +30,15 @@ class ListenerTable
     }
 
     /**
-     * @param int $raw default raw 1
+     * @param int $row default $row 1
      * @param int $size default size 4M
      */
-    private function initTable(int $raw = 1, int $size = 4 * 1024 * 1024)
+    private function initTable(int $row = 1, int $size = 4 * 1024 * 1024)
     {
-        $this->table = new Table($raw);
-        $this->table->column(self::KEY, Table::TYPE_STRING, $size);
+        $this->tableKey = 'fds';
+
+        $this->table = new Table($row);
+        $this->table->column($this->tableKey, Table::TYPE_STRING, $size);
         $this->table->create();
     }
 
@@ -56,8 +49,8 @@ class ListenerTable
      */
     public function push(string $fd) : bool
     {
-        if ($this->table->exist(self::KEY)) {
-            $value = $this->table->get(self::KEY, self::KEY);
+        if ($this->table->exist($this->tableKey)) {
+            $value = $this->table->get($this->tableKey, $this->tableKey);
             if ($value) {
                 $value = json_decode($value, true);
                 if (is_null($value)) {
@@ -68,20 +61,20 @@ class ListenerTable
                 } else {
                     array_push($value, $fd);
                     $value = [
-                        self::KEY => json_encode($value)
+                        $this->tableKey => json_encode($value)
                     ];
 
-                    return $this->setTable(self::KEY, $value);
+                    return $this->setTable($this->tableKey, $value);
                 }
             } else {
                 throw new \Exception('get table key return false');
             }
         } else {
             $value = [
-                self::KEY => json_encode([$fd])
+                $this->tableKey => json_encode([$fd])
             ];
 
-            return $this->setTable(self::KEY, $value);
+            return $this->setTable($this->tableKey, $value);
         }
     }
 
@@ -92,8 +85,8 @@ class ListenerTable
      */
     public function pop(string $fd) : bool
     {
-        if ($this->table->exist(self::KEY)) {
-            $value = $this->table->get(self::KEY, self::KEY);
+        if ($this->table->exist($this->tableKey)) {
+            $value = $this->table->get($this->tableKey, $this->tableKey);
             if ($value) {
                 $value = json_decode($value, true);
                 if (is_null($value)) {
@@ -104,10 +97,10 @@ class ListenerTable
                 } else {
                     $value = array_diff($value, [$fd]);
                     $value = [
-                        self::KEY => json_encode($value)
+                        $this->tableKey => json_encode($value)
                     ];
 
-                    return $this->setTable(self::KEY, $value);
+                    return $this->setTable($this->tableKey, $value);
                 }
             } else {
                 throw new \Exception('get table key return false');
@@ -123,7 +116,7 @@ class ListenerTable
      */
     public function getListener() : array
     {
-        $value = $this->table->get(self::KEY, self::KEY);
+        $value = $this->table->get($this->tableKey, $this->tableKey);
         if ($value) {
             $value = json_decode($value, true);
             if (is_null($value)) {
@@ -137,27 +130,19 @@ class ListenerTable
     }
 
     /**
-     * @return int
-     */
-    public function count() : int
-    {
-        return $this->table->count();
-    }
-
-    /**
      * @param string $key
-     * @param array $value
      *
-     * @return bool
+     * @return string
      *
      * @throws \Exception
      */
-    private function setTable(string $key, array $value): bool
+    public function get(string $key) : string
     {
-        if ($this->table->set($key, $value)) {
-            return true;
+        $value = $this->table->get($key, $this->tableKey);
+        if ($value !== false) {
+            return $value;
         } else {
-            throw new \Exception('set table key error');
+            throw new \Exception('get table key return false');
         }
     }
 }

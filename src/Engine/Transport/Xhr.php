@@ -11,7 +11,8 @@ use SocketIO\Enum\Message\TypeEnum;
 use SocketIO\Parser\Polling\Packet;
 use SocketIO\Parser\Polling\Payload;
 use SocketIO\Storage\Table\NamespaceSessionTable;
-use SocketIO\Storage\Table\SessionTable;
+use SocketIO\Storage\Table\SessionListenerTable;
+use SocketIO\Storage\Table\SessionNamespaceTable;
 
 /**
  * Class Xhr
@@ -44,14 +45,16 @@ class Xhr extends Polling
 
             $responsePayload->setChunkData($socketIoPacket . $engineIoPacket);
 
-            SessionTable::getInstance()->push($this->getSid(), -1);
+            SessionListenerTable::getInstance()->push($this->getSid(), -1);
 
             NamespaceSessionTable::getInstance()->push('/', $this->getSid());
+
+            SessionNamespaceTable::getInstance()->push($this->getSid(), '/');
         } else {
             // hanging request before websocket connected
             $isHanging = true;
             while ($isHanging) {
-                $sessionId = SessionTable::getInstance()->get($pollingPayload->getSid());
+                $sessionId = SessionListenerTable::getInstance()->get($pollingPayload->getSid());
                 if ($sessionId !== -1) {
                     $isHanging = false;
                 }
