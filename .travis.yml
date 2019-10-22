@@ -9,9 +9,16 @@ matrix:
     - php: 7.1
       env: SW_VERSION="4.4.7"
 
+before_install:
+  - export PHP_MAJOR="$(`phpenv which php` -r 'echo phpversion();' | cut -d '.' -f 1)"
+  - export PHP_MINOR="$(`phpenv which php` -r 'echo phpversion();' | cut -d '.' -f 2)"
+  - echo $PHP_MAJOR
+  - echo $PHP_MINOR
+
 install:
   - cd $TRAVIS_BUILD_DIR
   - bash .travis/swoole.install.sh
+  - phpenv config-add .travis/php.ini
 
 before_script:
   - composer install
