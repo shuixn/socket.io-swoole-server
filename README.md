@@ -2,7 +2,9 @@
 :rainbow: Socket.io Server implementation for Swoole
 
 ![Build Status](https://travis-ci.org/funsoul/socket.io-swoole-server.svg?branch=master)
-
+![](https://img.shields.io/badge/PHP-%3E%3D7.1.0-green)
+![](https://img.shields.io/badge/Swoole-%3E%3D4.0.3-green)
+![](https://img.shields.io/github/license/funsoul/socket.io-swoole-server)
 ## Server
 
 ### Server Config
