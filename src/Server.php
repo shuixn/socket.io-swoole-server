@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace SocketIO;
 
-use Co\Channel;
+use Swoole\Coroutine\Channel;
 use SocketIO\Engine\Payload\ChannelPayload;
 use SocketIO\Engine\Payload\ConfigPayload;
 use SocketIO\Engine\Server as EngineServer;

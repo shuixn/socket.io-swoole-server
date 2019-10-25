@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace SocketIO\Event;
 
-use Co\Channel;
+use Swoole\Coroutine\Channel;
 
 /**
  * Class EventPayload
