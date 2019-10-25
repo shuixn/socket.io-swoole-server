@@ -1,5 +1,5 @@
 $(function() {
-    var socket = io('http://' + document.domain + ':9991');
+    var socket = io('http://' + document.domain + ':9501');
     var nickname;
     var isEnter = false;
 
