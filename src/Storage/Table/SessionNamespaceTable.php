@@ -20,22 +20,28 @@ class SessionNamespaceTable extends BaseTable
 
     private function __construct(){}
 
-    public static function getInstance()
+    /**
+     * @param int $row
+     * @param int $size
+     *
+     * @return SessionNamespaceTable
+     */
+    public static function getInstance(int $row = 1000, int $size = 4 * 1024 * 1024)
     {
         if (is_null(self::$instance)) {
             self::$instance = new self();
 
-            self::$instance->initTable();
+            self::$instance->initTable($row, $size);
         }
 
         return self::$instance;
     }
 
     /**
-     * @param int $row default $row 1000
-     * @param int $size default size 4M
+     * @param int $row
+     * @param int $size
      */
-    private function initTable(int $row = 1000, int $size = 4 * 1024 * 1024)
+    private function initTable(int $row, int $size)
     {
         $this->tableKey = 'namespaces';
 

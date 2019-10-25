@@ -21,7 +21,7 @@ class ListenerSessionTableTest extends TestCase
     {
         parent::__construct($name, $data, $dataName);
 
-        $this->table = ListenerSessionTable::getInstance();
+        $this->table = ListenerSessionTable::getInstance(1, 1024);
     }
 
     public function testCount()

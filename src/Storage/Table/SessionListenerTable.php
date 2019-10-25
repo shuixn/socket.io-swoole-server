@@ -15,17 +15,22 @@ use Swoole\Table;
  */
 class SessionListenerTable extends BaseTable
 {
-    /** @var ListenerTable */
+    /** @var SessionListenerTable */
     private static $instance = null;
 
     private function __construct(){}
 
-    public static function getInstance()
+    /**
+     * @param int $row
+     *
+     * @return SessionListenerTable
+     */
+    public static function getInstance(int $row = 65535)
     {
         if (is_null(self::$instance)) {
             self::$instance = new self();
 
-            self::$instance->initTable();
+            self::$instance->initTable($row);
         }
 
         return self::$instance;
@@ -34,7 +39,7 @@ class SessionListenerTable extends BaseTable
     /**
      * @param int $row
      */
-    private function initTable(int $row = 65535)
+    private function initTable(int $row)
     {
         $this->tableKey = 'fd';
 

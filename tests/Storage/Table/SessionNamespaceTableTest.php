@@ -21,7 +21,7 @@ class SessionNamespaceTableTest extends TestCase
     {
         parent::__construct($name, $data, $dataName);
 
-        $this->table = SessionNamespaceTable::getInstance();
+        $this->table = SessionNamespaceTable::getInstance(1, 1024);
     }
 
     public function testCount()
