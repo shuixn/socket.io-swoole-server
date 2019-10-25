@@ -60,7 +60,7 @@ class Server
 
         $this->server->set([
             'open_http_protocol' => true,
-            'worker_num' => $configPayload->getWorkerNum() ?? 1,
+            'worker_num' => $configPayload->getWorkerNum() ?? 2,
             'daemonize' => $configPayload->getDaemonize() ?? 0
         ]);
 
@@ -181,6 +181,7 @@ class Server
 
                 $this->produceEvent($server, '/', 'connection', $request->fd);
             } else {
+                echo "invalid params\n";
                 $server->close($request->fd);
             }
         } else {

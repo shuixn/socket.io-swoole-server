@@ -11,11 +11,17 @@ namespace SocketIO\Engine\Payload;
  */
 class ConfigPayload
 {
-    /** @var int */
-    private $workerNum;
+    /**
+     * default start 2 worker
+     * @var int
+     */
+    private $workerNum = 2;
 
-    /** @var int */
-    private $daemonize;
+    /**
+     * default 0 means not daemon
+     * @var int
+     */
+    private $daemonize = 0;
 
     /**
      * @return int
@@ -29,9 +35,9 @@ class ConfigPayload
      * @param int $workerNum
      * @return ConfigPayload
      */
-    public function setWorkerNum(int $workerNum): ConfigPayload
+    public function setWorkerNum(int $workerNum = 2): ConfigPayload
     {
-        $this->workerNum = $workerNum;
+        $this->workerNum = $workerNum >= 2 ? $workerNum : 2;
         return $this;
     }
 

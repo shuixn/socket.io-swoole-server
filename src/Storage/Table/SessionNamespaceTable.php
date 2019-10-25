@@ -128,15 +128,15 @@ class SessionNamespaceTable extends BaseTable
     }
 
     /**
-     * @param string $key
+     * @param string $sid
      *
      * @return array
      *
      * @throws \Exception
      */
-    public function get(string $key) : array
+    public function get(string $sid) : array
     {
-        $value = $this->table->get($key, $this->tableKey);
+        $value = $this->table->get($sid, $this->tableKey);
         if ($value !== false) {
             return json_decode($value, true);
         } else {

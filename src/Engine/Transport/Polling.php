@@ -27,6 +27,42 @@ class Polling
     protected $upgrades = ["websocket"];
 
     /**
+     * @return int
+     */
+    public function getPingInterval(): int
+    {
+        return $this->pingInterval;
+    }
+
+    /**
+     * @param int $pingInterval
+     * @return Polling
+     */
+    public function setPingInterval(int $pingInterval): Polling
+    {
+        $this->pingInterval = $pingInterval;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPingTimeout(): int
+    {
+        return $this->pingTimeout;
+    }
+
+    /**
+     * @param int $pingTimeout
+     * @return Polling
+     */
+    public function setPingTimeout(int $pingTimeout): Polling
+    {
+        $this->pingTimeout = $pingTimeout;
+        return $this;
+    }
+
+    /**
      * @return string
      *
      * @throws \Exception

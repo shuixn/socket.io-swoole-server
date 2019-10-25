@@ -2,53 +2,53 @@
 
 declare(strict_types=1);
 
-namespace SocketIO;
+namespace SocketIOTests\Storage\Table;
 
 use PHPUnit\Framework\TestCase;
 use SocketIO\Storage\Table\SessionListenerTable;
 
 /**
- * Class SessionTableTest
+ * Class SessionListenerTableTest
  *
  * @package SocketIO
  */
-class SessionTableTest extends TestCase
+class SessionListenerTableTest extends TestCase
 {
     /** @var SessionListenerTable */
-    private $sessionTable;
+    private $table;
 
     public function __construct($name = null, array $data = [], $dataName = '')
     {
         parent::__construct($name, $data, $dataName);
 
-        $this->sessionTable = SessionListenerTable::getInstance();
+        $this->table = SessionListenerTable::getInstance();
     }
 
     public function testCount()
     {
-        $this->assertEquals(0, $this->sessionTable->count());
+        $this->assertEquals(0, $this->table->count());
     }
 
     public function testPush()
     {
         $sid = 'xyz';
         $fd = 1;
-        $this->assertEquals(true, $this->sessionTable->push($sid, $fd));
+        $this->assertEquals(true, $this->table->push($sid, $fd));
     }
 
     public function testPop()
     {
         $sid = 'xyz';
         $fd = 1;
-        $this->assertEquals($fd, $this->sessionTable->pop($sid));
+        $this->assertEquals($fd, $this->table->pop($sid));
     }
 
     public function testGet()
     {
         $sid = 'xyz';
         $fd = 1;
-        $this->sessionTable->push($sid, $fd);
-        $this->assertEquals($fd, $this->sessionTable->get($sid));
-        $this->assertEquals($fd, $this->sessionTable->get($sid));
+        $this->table->push($sid, $fd);
+        $this->assertEquals($fd, $this->table->get($sid));
+        $this->assertEquals($fd, $this->table->get($sid));
     }
 }

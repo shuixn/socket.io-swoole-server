@@ -130,17 +130,22 @@ class ListenerTable extends BaseTable
     }
 
     /**
-     * @param string $key
+     * @param string $fd
      *
-     * @return string
+     * @return bool
      *
      * @throws \Exception
      */
-    public function get(string $key) : string
+    public function isExists(string $fd) : bool
     {
-        $value = $this->table->get($key, $this->tableKey);
-        if ($value !== false) {
-            return $value;
+        $value = $this->table->get($this->tableKey, $this->tableKey);
+        if ($value) {
+            $value = json_decode($value, true);
+            if (is_null($value)) {
+                throw new \Exception('json decode failed: ' . json_last_error_msg());
+            }
+
+            return in_array($fd, $value);
         } else {
             throw new \Exception('get table key return false');
         }

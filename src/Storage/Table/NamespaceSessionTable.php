@@ -128,15 +128,15 @@ class NamespaceSessionTable extends BaseTable
     }
 
     /**
-     * @param string $key
+     * @param string $namespace
      *
      * @return array
      *
      * @throws \Exception
      */
-    public function get(string $key) : array
+    public function get(string $namespace) : array
     {
-        $value = $this->table->get($key, $this->tableKey);
+        $value = $this->table->get($namespace, $this->tableKey);
         if ($value !== false) {
             return json_decode($value, true);
         } else {

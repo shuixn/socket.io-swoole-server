@@ -20,7 +20,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "SocketIO\\": "tests"
+      "SocketIOTest\\": "tests"
     }
   },
   "require-dev": {
