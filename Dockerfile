@@ -1,12 +1,12 @@
 FROM php:7.1-cli-alpine3.8
 
-LABEL maintainer="funsoul <https://github.com/funsoul/>"
+LABEL maintainer="shuixn <https://github.com/shuixn/>"
 
 ENV USER=www \
     UID=1000 \
     GID=1000 \
     SWOOLE_VERSION=4.4.8 \
-    COMPOSER_VERSION=1.8.6
+    COMPOSER_VERSION=1.9.0
 
 RUN addgroup --gid "$GID" "$USER" \
   && adduser \
@@ -47,10 +47,9 @@ cd swoole \
 && docker-php-ext-enable swoole
 
 # Composer
-RUN cd /tmp \
-    && wget https://github.com/composer/composer/releases/download/${COMPOSER_VERSION}/composer.phar \
-    && chmod u+x composer.phar \
-    && mv composer.phar /usr/local/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer \
+    && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
 
 COPY . /var/www
 

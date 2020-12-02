@@ -1,5 +1,5 @@
 {
-  "name": "funsoul/socket.io-swoole-server",
+  "name": "shuixn/socket.io-swoole-server",
   "description": ":rainbow: Socket.io Server implementation for Swoole",
   "keywords": ["socket.io", "swoole", "websocket"],
   "require": {
@@ -9,7 +9,7 @@
   },
   "authors": [
     {
-      "name": "funsoul",
+      "name": "shuixn",
       "email": "cyanming2016@gmail.com"
     }
   ],
