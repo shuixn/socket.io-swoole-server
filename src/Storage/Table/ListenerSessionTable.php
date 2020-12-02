@@ -26,7 +26,7 @@ class ListenerSessionTable extends BaseTable
      *
      * @return ListenerSessionTable
      */
-    public static function getInstance(int $row = 65535, int $size = 4 * 1024 * 1024)
+    public static function getInstance(int $row = 65535, int $size = 64)
     {
         if (is_null(self::$instance)) {
             self::$instance = new self();
