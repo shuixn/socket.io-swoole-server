@@ -24,7 +24,7 @@ class ListenerTable extends BaseTable
      *
      * @return ListenerTable
      */
-    public static function getInstance(int $row = 1, int $size = 4 * 1024 * 1024)
+    public static function getInstance(int $row = 1, int $size = 1024)
     {
         if (is_null(self::$instance)) {
             self::$instance = new self();

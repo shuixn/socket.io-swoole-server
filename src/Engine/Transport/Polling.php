@@ -70,7 +70,7 @@ class Polling
     public function getSid() : string
     {
         if (empty($this->sid)) {
-            $this->sid = bin2hex(pack('d', microtime(true)).pack('N', function_exists('random_int') ? random_int(1, 100000000): rand(1, 100000000)));
+            $this->sid = md5(bin2hex(pack('d', microtime(true)).pack('N', function_exists('random_int') ? random_int(1, 100000000): rand(1, 100000000))));
         }
 
         return $this->sid;

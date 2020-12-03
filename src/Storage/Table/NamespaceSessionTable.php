@@ -26,7 +26,7 @@ class NamespaceSessionTable extends BaseTable
      *
      * @return NamespaceSessionTable
      */
-    public static function getInstance(int $row = 1000, int $size = 4 * 1024 * 1024)
+    public static function getInstance(int $row = 1000, int $size = 64 * 1000)
     {
         if (is_null(self::$instance)) {
             self::$instance = new self();
