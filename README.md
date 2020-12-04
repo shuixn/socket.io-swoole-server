@@ -8,7 +8,7 @@
 
 ## Code Contributors
 
-This project exists thanks to all the people who contribute. [[Contribute](https://github.com/shuixn/socket.io-swoole-server/graphs/contributors)].
+Thank you.[[Contribute](https://github.com/shuixn/socket.io-swoole-server/graphs/contributors)].
 
 ## Server
 
