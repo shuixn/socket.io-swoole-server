@@ -1,5 +1,5 @@
 {
-  "name": "shuixn/socket.io-swoole-server",
+  "name": "DimmmCom/socket.io-swoole-server",
   "description": ":rainbow: Socket.io Server implementation for Swoole",
   "keywords": ["socket.io", "swoole", "websocket"],
   "require": {
